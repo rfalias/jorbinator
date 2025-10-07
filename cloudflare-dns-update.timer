@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Cloudflare DNS Update Service Every Hour
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15m
+
+[Install]
+WantedBy=timers.target
+

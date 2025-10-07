@@ -1,0 +1,7 @@
+[Unit]
+Description=Update Cloudflare DNS Records with Public IP
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /root/ipsync/ipsync.py
+
