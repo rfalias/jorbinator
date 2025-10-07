@@ -1,0 +1,26 @@
+version: "3.7"
+
+services:
+  lidarr:
+    network_mode: bridge
+    container_name: lidarr
+    image: ghcr.io/hotio/lidarr:nightly
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=America/New_York
+    labels:
+      - traefik.enable=true
+      - traefik.protocol=http
+      - traefik.http.middlewares.lidarr-whitelist.ipwhitelist.sourcerange=127.0.0.1/32, 192.168.0.0/16, 172.0.0.0/8
+      - traefik.http.routers.lidarr.rule=Host(`lidarr.yourdomain.com`) || Host(`lidarr2.yourdomain.com`)
+      - traefik.http.routers.lidarr.entrypoints=websecure
+      - traefik.http.services.lidarr.loadbalancer.server.port=8686
+      - traefik.http.routers.lidarr.service=lidarr
+      - traefik.http.routers.lidarr.tls.certresolver=mydnschallenge
+      - traefik.http.routers.lidarr.middlewares=lidarr-whitelist
+    volumes:
+      - /data/servers/lidarr/config:/config
+      - /data/servers/sabnzbd/config/Downloads:/config/Downloads
+

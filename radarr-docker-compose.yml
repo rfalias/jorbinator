@@ -1,0 +1,28 @@
+version: "3.7"
+
+services:
+  radarr:
+    network_mode: bridge
+    container_name: radarr
+    image: ghcr.io/hotio/radarr
+    #ports:
+      #- "7878:7878"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=America/New_York
+    labels:
+      - traefik.enable=true
+      - traefik.protocol=http
+      - traefik.http.middlewares.radarr-whitelist.ipwhitelist.sourcerange=127.0.0.1/32, 192.168.0.0/16, 172.0.0.0/8
+      - traefik.http.routers.radarr.rule=Host(`radarr.yourdomain.com`)
+      - traefik.http.routers.radarr.entrypoints=websecure
+      - traefik.http.services.radarr.loadbalancer.server.port=7878
+      - traefik.http.routers.radarr.service=radarr
+      - traefik.http.routers.radarr.tls.certresolver=mydnschallenge
+      - traefik.http.routers.radarr.middlewares=radarr-whitelist
+    volumes:
+      - /data/servers/radarr/config:/config
+      - /data/servers/sabnzbd/config/Downloads:/config/Downloads
+

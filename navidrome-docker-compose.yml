@@ -1,0 +1,34 @@
+version: "3"
+services:
+  navidrome:
+    network_mode: bridge
+    image: deluan/navidrome:latest
+    user: 1000:1000 # should be owner of volumes
+    restart: unless-stopped
+    environment:
+      # Optional: put your config options customization here. Examples:
+      ND_SCANSCHEDULE: 1h
+      ND_LOGLEVEL: info  
+      ND_SESSIONTIMEOUT: 24h
+      ND_LASTFM_ENABLED: true
+      ND_LASTFM_APIKEY: "KEY"
+      ND_LASTFM_SECRET: "SECRET"
+      ND_COVERARTPRIORITY: embedded
+      ND_ARTISTARTPRIORITY: external
+      ND_SPOTIFY_ID: "ID"
+      ND_SPOTIFY_SECRET: "SECRET"
+      #ND_BASEURL: "https://"
+    volumes:
+      - /data/servers/navidrome:/data
+      - /data/servers/sabnzbd/config/Downloads/complete/music:/music:ro
+    labels:
+      - traefik.enable=true
+      - traefik.protocol=http
+      - traefik.http.middlewares.navidrome-whitelist.ipwhitelist.sourcerange=127.0.0.1/32, 192.168.0.0/16, 172.0.0.0/8, 0.0.0.0/0
+      - traefik.http.routers.navidrome.rule=Host(`navidrome.yourdomain.com`) || Host(`navipub.yourdomain.com`)
+      - traefik.http.routers.navidrome.entrypoints=websecure
+      - traefik.http.services.navidrome.loadbalancer.server.port=4533
+      - traefik.http.routers.navidrome.service=navidrome
+      - traefik.http.routers.navidrome.tls.certresolver=mydnschallenge
+      - traefik.http.routers.navidrome.middlewares=navidrome-whitelist
+

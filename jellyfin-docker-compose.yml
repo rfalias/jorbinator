@@ -1,0 +1,48 @@
+version: '3.5'
+services:
+  jellyfin:
+    network_mode: bridge
+    image: jellyfin/jellyfin
+    container_name: jellyfin2
+    runtime: nvidia
+    devices:
+      - /dev/nvidia0:/dev/nvidia0
+      - /dev/nvidiactl:/dev/nvidiactl
+      - /dev/nvidia-caps:/dev/nvidia-caps
+      - /dev/nvidia-modeset:/dev/nvidia-modeset
+      - /dev/nvidia-uvm:/dev/nvidia-uvm
+      - /dev/nvidia-uvm-tools:/dev/nvidia-uvm-tools
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    labels:
+      - traefik.enable=true
+      - traefik.protocol=http
+      - traefik.http.middlewares.tv-whitelist.ipwhitelist.sourcerange=127.0.0.1/32, 192.168.0.0/16, 172.0.0.0/8, 0.0.0.0/0
+      - traefik.http.routers.tv.rule=Host(`tv.yourdomain.com`) || Host(`tvpub.yourdomain.com`)
+      - traefik.http.routers.tv.entrypoints=websecure
+      - traefik.http.services.tv.loadbalancer.server.port=8096
+      - traefik.http.routers.tv.service=tv
+      - traefik.http.routers.tv.tls.certresolver=mydnschallenge
+      - traefik.http.routers.tv.middlewares=tv-whitelist
+    volumes:
+      - /data/servers/jellyfin/config:/config
+      - /data/servers/jellyfin/cache:/cache
+      - /data/servers/sabnzbd/config/Downloads/complete:/media
+
+    restart: always
+    # Optional - alternative address used for autodiscovery
+    environment:
+      - JELLYFIN_PublishedServerUrl=http://tv.yourdomain.com
+      - NVIDIA_VISIBLE_DEVICES=all
+    # Optional - may be necessary for docker healthcheck to pass if running in host network mode
+      - JELLYFIN_FFmpeg__analyzeduration=5M
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=America/New_York
+

@@ -1,0 +1,26 @@
+version: "3.7"
+services:
+  sonarr:
+    network_mode: bridge
+    container_name: sonarr
+    image: ghcr.io/hotio/sonarr
+
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+      - TZ=America/New_York
+    labels:
+      - traefik.enable=true
+      - traefik.protocol=http
+      - traefik.http.middlewares.sonarr-whitelist.ipwhitelist.sourcerange=127.0.0.1/32, 192.168.0.0/16, 172.17.0.0/16
+      - traefik.http.routers.sonarr.rule=Host(`sonarr.yourdomain.com`)
+      - traefik.http.routers.sonarr.entrypoints=websecure
+      - traefik.http.services.sonarr.loadbalancer.server.port=8989
+      - traefik.http.routers.sonarr.service=sonarr
+      - traefik.http.routers.sonarr.tls.certresolver=mydnschallenge
+      - traefik.http.routers.sonarr.middlewares=sonarr-whitelist
+    volumes:
+      - /data/servers/sonarr/config:/config
+      - /data/servers/sabnzbd/config/Downloads:/config/Downloads
+
