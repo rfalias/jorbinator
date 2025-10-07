@@ -1,0 +1,10 @@
+api:
+  insecure: true
+  dashboard: true
+serversTransport:
+    insecureSkipVerify: true
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/selfsigned.crt
+      keyFile: /etc/traefik/certs/selfsigned.key
+

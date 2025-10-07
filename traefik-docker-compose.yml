@@ -1,0 +1,62 @@
+version: "3"
+
+services:
+  traefik:
+    image: "traefik"
+    container_name: "traefik"
+    network_mode: bridge
+    command:
+      # Globals
+      - "--log.level=DEBUG"
+      - "--api=true"
+      - "--global.sendAnonymousUsage=false"
+      - "--serverstransport.insecureskipverify=true"
+      # Docker
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      # Entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      # LetsEncrypt
+      - "--certificatesresolvers.mydnschallenge.acme.email=your-email@domain.com"
+      - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.mydnschallenge.acme.dnschallenge.resolvers=1.1.1.1:53"
+      - "--certificatesresolvers.mydnschallenge.acme.storage=/etc/traefik/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - CF_API_EMAIL=your-email@domain.com
+      - CF_DNS_API_TOKEN=hunter2
+    volumes:
+      - "/etc/traefik/acme.json:/etc/traefik/acme.json"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/etc/traefik/certs/default.crt:/certs/default.crt"
+      - "/etc/traefik/certs/default.key:/certs/default.key"
+    labels:
+      # API
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.yourdomain.com`)"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - "traefik.http.services.traefik.loadbalancer.server.scheme=http"
+      # Wildcard cert
+      - "traefik.http.routers.traefik.tls.domains[0].main=yourdomain.com"
+      - "traefik.http.routers.traefik.tls.domains[0].sans=*.yourdomain.com"
+      - "traefik.http.routers.traefik.tls.certresolver=mydnschallenge"
+      # Global http-->https
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:[a-z-.]+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+  whoami:
+    image: "containous/whoami"
+    container_name: "whoami"
+    network_mode: bridge
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.yourdomain.com`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=mydnschallenge"
+
